@@ -1,0 +1,37 @@
+import socket
+from threading import Thread
+
+host = "cs118.org"  # domain connecting to
+port = 80
+request = "GET / HTTP/1.1\r\nHost: cs118.org\r\nConnection: closer\r\n\r\n"  # request - HTTP 1.1 format to host cs118.org
+
+
+def fetch(thread_id):
+    try:
+        csocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        csocket.connect((host, port))
+        csocket.sendall(request.encode())
+
+        response = b""
+        while True:
+            chunk = csocket.recv(4096)
+            if not chunk:
+                break
+            response += chunk
+
+        csocket.close()
+        print(f"[Thread {thread_id}] Received {len(response)} bytes")
+
+    except Exception as e:
+        print(f"[Thread {thread_id}] Error: {e}")
+
+
+threads = []  # array of each thread's data
+for i in range(10):
+    t = Thread(target=fetch, args=(i, ))
+    t.start()
+    threads.append(t)
+
+for t in threads:
+    t.join()
+
