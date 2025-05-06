@@ -20,17 +20,8 @@ def race_requests_http11(reqs: list[str]) -> list[str]:
 
     def fetch(thread_id: int):
         try:
-            hostname = ''
             port = 443
-
-            # Extract hostname from Host header
-            for line in reqs[thread_id].splitlines():
-                if line.lower().startswith('host:'):
-                    hostname = line.split(':', 1)[1].strip()
-                    print(hostname)
-                    break
-            if not hostname:
-                raise ValueError("Missing Host header in request")
+            hostname = get_host(reqs[thread_id])
 
             # Establish SSL connection
             context = ssl.create_default_context()
@@ -93,4 +84,10 @@ def get_host(req: str) -> str:
     """
     Get host from the host field of an http request.
     """
-    ...
+    for line in req.splitlines():
+        if line.lower().startswith("host:"):
+            # Extract everything after "Host:"
+            host = line.split(":", 1)[1].strip()
+            # If the host has a port (e.g., example.com:8080), remove it
+            return host.split(":")[0]
+    raise ValueError("Missing Host header in request")
