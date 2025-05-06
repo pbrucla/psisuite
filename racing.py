@@ -1,6 +1,7 @@
 import socket
 import ssl
 import threading
+import subprocess
 
 
 def race_requests_http11(reqs: list[str]) -> list[str]:
@@ -91,3 +92,20 @@ def get_host(req: str) -> str:
             # If the host has a port (e.g., example.com:8080), remove it
             return host.split(":")[0]
     raise ValueError("Missing Host header in request")
+
+
+def get_http_version(url: str) -> str:
+    """
+    Get HTTP/HTTPS version of a website.
+    """
+    
+    command = ["curl", "--http2", "-sI", url, "-o", "/dev/null", "-w", "'%{http_version}\n'"]
+
+    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    output = result.stdout
+
+    if result.returncode == 0:
+        return output[1:-2]
+    else:
+        raise Exception("Return code was " + str(result.returncode))
+
