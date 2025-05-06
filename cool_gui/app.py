@@ -8,45 +8,67 @@ from kivy.uix.image import Image
 from kivy.graphics import Rectangle
 from kivy.graphics.texture import Texture
 from kivy.core.image import Image as CoreImage
+from kivy.uix.widget import Widget
+from kivy.uix.anchorlayout import AnchorLayout
+from kivy.uix.filechooser import FileChooserListView
+from kivy.uix.popup import Popup
 
 class HomeScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         outer_layout = BoxLayout(orientation='vertical')
-        inner_layout = BoxLayout(orientation='horizontal')
+        inner_layout = BoxLayout(
+            orientation='horizontal'
+            #spacing=50,
+            #padding=[50, 20],
+        )
         welcome_msg = Label(
             text="[size=50]Welcome to Psi Suite![/size]\n[size=32]Created by ACM Cyber[/size]",
             markup=True  # Important to enable markup
         )
        
+        # btn_intrude = Button(
+        #     text="Intrude",
+        #     size_hint=(0.5, None),  # 50% width, fixed height
+        #     height=250
+        # )
+
         btn_intrude = Button(
-            #background_normal="./flag.png",  # <-- Use background_normal for image
-            #background_down="./flag.png",    # optional, when pressed
+            # background_normal="pink.png",
+            # background_down="pink.png",
+            background_color = get_color_from_hex("#a40062"),
+            size_hint=(0.5, 1),
             text="Intrude",
-            size_hint=(None, None),
-            width=600, height=250
+            font_size=24,
+            color=(1, 1, 1, 1)  # white text, RGBA
         )
     
             
         btn_race = Button(
             text="Race Condition",
-            size_hint=(None, None), width=600, height=250
+            size_hint=(0.5, 1),
+            background_color = get_color_from_hex("#a40062")
         )
 
         # center the two buttons
         welcome_msg.halign = 'center'
         welcome_msg.valign = 'center'
+
         
         outer_layout.add_widget(welcome_msg)
 
-        inner_layout.add_widget(btn_intrude)
-        inner_layout.add_widget(btn_race)
+        button_row = BoxLayout(orientation='horizontal', spacing=20, size_hint=(1, None), height=250)
+        button_row.add_widget(btn_intrude)
+        button_row.add_widget(btn_race)
+
+        # anchors buttons horizontally
+        anchor = AnchorLayout(anchor_x='center', anchor_y='center', size_hint=(1, None), height=250)
+        anchor.add_widget(button_row)
+
+        outer_layout.add_widget(anchor)
+
         btn_intrude.bind(on_press=self.go_to_intruder)
         btn_race.bind(on_press=self.go_to_race)
-
-        outer_layout.add_widget(inner_layout)
-        inner_layout.halign = 'center'
-        inner_layout.valign = 'center'
 
         self.add_widget(outer_layout)  # Add the layout to the screen
     
@@ -62,16 +84,56 @@ class Intruder(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         layout = BoxLayout(orientation='vertical')
+        # Define components
         welcome_msg = Label(text="You've reached the Intruder Section")
-        btn_intrude = Button(text="Go back to home")
+        btn_upload = Button(text="Upload File")
+        btn_intrude = Button(text="Intrude!")
+        btn_home = Button(text="Go back to home")
+
+        # add components to layout
         layout.add_widget(welcome_msg)
+
+        layout.add_widget(btn_upload)
+        btn_upload.bind(on_press=self.open_filechooser)
+
+        self.file_display = BoxLayout(orientation='vertical', size_hint_y=None, height=500)
+        layout.add_widget(self.file_display)
+
         layout.add_widget(btn_intrude)
-        btn_intrude.bind(on_press=self.go_to_home)
+
+        layout.add_widget(btn_home)
+        btn_home.bind(on_press=self.go_to_home)
+
         self.add_widget(layout)  # Add the layout to the screen
 
     def go_to_home(self, instance):
         self.manager.transition = SlideTransition(direction='right')
         self.manager.current = 'home'  # Switch to the Intruder screen
+
+    def open_filechooser(self, instance):
+        # Create a FileChooserListView widget
+        filechooser = FileChooserListView()
+        filechooser.bind(on_selection=self.open_filechooser)
+
+        # Create a Popup to display the file chooser
+        popup = Popup(title="Choose a file", content=filechooser, size_hint=(0.8, 0.8))
+        popup.open()
+
+    def on_file_selected(self, instance, value):
+        if value:
+            file_path = value[0]  # Get the selected file path
+            print(f"Selected file: {file_path}")
+            self.display_file(file_path)
+
+    def display_file(self, file_path):
+        # Clear the previous file display content
+        self.file_display.clear_widgets()
+
+        if file_path.lower().endswith('.txt'):
+            with open(file_path, 'r') as file:
+                file_content = file.read()
+            file_label = Label(text=file_content, size_hint_y=None, height=400)
+            self.file_display.add_widget(file_label)
 
 class Race(Screen):
     def __init__(self, **kwargs):
