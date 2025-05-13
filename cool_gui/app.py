@@ -111,29 +111,35 @@ class Intruder(Screen):
         self.manager.current = 'home'  # Switch to the Intruder screen
 
     def open_filechooser(self, instance):
-        # Create a FileChooserListView widget
+        layout = BoxLayout(orientation='vertical')
+
         filechooser = FileChooserListView()
-        filechooser.bind(on_selection=self.open_filechooser)
+        self.filechooser = filechooser  # Save a reference to access selected file
 
-        # Create a Popup to display the file chooser
-        popup = Popup(title="Choose a file", content=filechooser, size_hint=(0.8, 0.8))
-        popup.open()
+        btn_select = Button(text="Select", size_hint=(1, 0.1))
+        btn_select.bind(on_press=self.on_file_select_button_pressed)
 
-    def on_file_selected(self, instance, value):
-        if value:
-            file_path = value[0]  # Get the selected file path
+        layout.add_widget(filechooser)
+        layout.add_widget(btn_select)
+
+        self.popup = Popup(title="Choose a file", content=layout, size_hint=(0.9, 0.9))
+        self.popup.open()
+
+    def on_file_select_button_pressed(self, instance):
+        selection = self.filechooser.selection
+        if selection:
+            file_path = selection[0]
             print(f"Selected file: {file_path}")
+            self.popup.dismiss()
             self.display_file(file_path)
 
     def display_file(self, file_path):
         # Clear the previous file display content
         self.file_display.clear_widgets()
 
-        if file_path.lower().endswith('.txt'):
-            with open(file_path, 'r') as file:
-                file_content = file.read()
-            file_label = Label(text=file_content, size_hint_y=None, height=400)
-            self.file_display.add_widget(file_label)
+
+        file_label = Label(text=file_path, size_hint_y=None, height=400)
+        self.file_display.add_widget(file_label)
 
 class Race(Screen):
     def __init__(self, **kwargs):
