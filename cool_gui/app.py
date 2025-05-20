@@ -10,8 +10,21 @@ from kivy.uix.image import Image
 from kivy.uix.label import Label
 from kivy.uix.popup import Popup
 from kivy.uix.screenmanager import Screen, ScreenManager, SlideTransition
+from kivy.uix.textinput import TextInput
 from kivy.uix.widget import Widget
 from kivy.utils import get_color_from_hex
+from kivy.uix.progressbar import ProgressBar
+from kivy.clock import Clock
+
+from pathlib import Path
+import sys
+import consts
+
+root = Path(__file__).parent / ".."
+sys.path.append(str(root.resolve()))
+
+import intruder
+import racing
 
 
 class HomeScreen(Screen):
@@ -87,6 +100,9 @@ class HomeScreen(Screen):
 class Intruder(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+        self.file_path = None
+
         layout = BoxLayout(orientation="vertical")
         # Define components
         welcome_msg = Label(text="You've reached the Intruder Section")
@@ -103,14 +119,39 @@ class Intruder(Screen):
         self.file_display = BoxLayout(
             orientation="vertical", size_hint_y=None, height=500
         )
+        self.intrude_template = TextInput(hint_text="Enter request template here...", multiline=True, size_hint=(1, 1), text=consts.default_intruder_template)
+        self.file_display.add_widget(self.intrude_template)
         layout.add_widget(self.file_display)
 
         layout.add_widget(btn_intrude)
+        btn_intrude.bind(on_press=self.intrude)
 
         layout.add_widget(btn_home)
         btn_home.bind(on_press=self.go_to_home)
 
         self.add_widget(layout)  # Add the layout to the screen
+
+    def intrude(self, instance):
+        # ensure carriage returns in template
+        template = (
+            self.intrude_template.text.replace("\n", "\r\n").strip()
+            + "\r\n\r\n"
+        )
+        assert self.file_path is not None
+        with open(self.file_path, "r") as fin:
+            words = fin.read().split("\n")
+        reqs = [template.replace("{word}", w) for w in words]
+        self.file_display.clear_widgets()
+
+        progress_bar = ProgressBar(max=len(reqs))
+        progress_bar.value = 0
+        def update_progress(dt):
+            if progress_bar.value < progress_bar.max:
+                progress_bar.value += 1
+            else:
+                return False
+        Clock.schedule_interval(update_progress, 0.2)
+        self.file_display.add_widget(progress_bar)
 
     def go_to_home(self, instance):
         self.manager.transition = SlideTransition(direction="right")
@@ -119,7 +160,7 @@ class Intruder(Screen):
     def open_filechooser(self, instance):
         layout = BoxLayout(orientation="vertical")
 
-        filechooser = FileChooserListView()
+        filechooser = FileChooserListView(path=".")
         self.filechooser = filechooser  # Save a reference to access selected file
 
         btn_select = Button(text="Select", size_hint=(1, 0.1))
@@ -140,11 +181,12 @@ class Intruder(Screen):
             self.display_file(file_path)
 
     def display_file(self, file_path):
+        self.file_path = file_path
         # Clear the previous file display content
-        self.file_display.clear_widgets()
+        # self.file_display.clear_widgets()
 
-        file_label = Label(text=file_path, size_hint_y=None, height=400)
-        self.file_display.add_widget(file_label)
+        # file_label = Label(text=file_path, size_hint_y=None, height=400)
+        # self.file_display.add_widget(file_label)
 
 
 class Race(Screen):
