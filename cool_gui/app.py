@@ -19,6 +19,7 @@ from kivy.clock import Clock
 from pathlib import Path
 import sys
 import consts
+from threading import Thread
 
 root = Path(__file__).parent / ".."
 sys.path.append(str(root.resolve()))
@@ -119,7 +120,7 @@ class Intruder(Screen):
         self.file_display = BoxLayout(
             orientation="vertical", size_hint_y=None, height=500
         )
-        self.intrude_template = TextInput(hint_text="Enter request template here...", multiline=True, size_hint=(1, 1), text=consts.default_intruder_template)
+        self.intrude_template = TextInput(hint_text="Enter request template here...", multiline=True, size_hint=(1, 1), text=consts.default_intruder_template, font_size=36)
         self.file_display.add_widget(self.intrude_template)
         layout.add_widget(self.file_display)
 
@@ -152,6 +153,10 @@ class Intruder(Screen):
                 return False
         Clock.schedule_interval(update_progress, 0.2)
         self.file_display.add_widget(progress_bar)
+
+        def intrude():
+            resps = intruder.send_requests_http11(reqs)
+        Thread(target=intrude, daemon=True).start()
 
     def go_to_home(self, instance):
         self.manager.transition = SlideTransition(direction="right")
